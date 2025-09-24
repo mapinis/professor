@@ -9,12 +9,21 @@ RUN apk add --no-cache \
     git \
     python3 \
     py3-pip \
-    nodejs \
-    npm \
     jq \
     tree \
     file \
-    which
+    which \
+    gcc \
+    g++ \
+    libc-dev \
+    python3-dev
+
+# Install some important python libraries
+RUN pip install --break-system-packages \
+    pandas \
+    numpy \
+    matplotlib \
+    scipy
 
 # Create a non-root user for extra safety
 RUN adduser -D -s /bin/bash sandbox
@@ -27,9 +36,6 @@ WORKDIR /workspace
 
 # Switch to non-root user
 USER sandbox
-
-# Install some important python libraries
-RUN pip install -g pandas numpy matplotlib scipy
 
 # Default command
 CMD ["/bin/bash"]
