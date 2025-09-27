@@ -1,3 +1,8 @@
+"""
+Utility functions for using docker to run bash commands
+Specifically to check the setup/build image and run a command
+"""
+
 import os
 
 import docker
