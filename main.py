@@ -13,9 +13,10 @@ import utils.io as io
 load_dotenv()
 
 
-def chat(chat_handler: ChatHandler, last_messages: list):
+def chat(chat_handler: ChatHandler, last_messages: list) -> bool:
     """
     Control chatting, with chat handler and the last messages
+    Returns True if any messages were sent by user
     """
 
     # show at most the last two messages
@@ -25,15 +26,21 @@ def chat(chat_handler: ChatHandler, last_messages: list):
 
     print("\nCtrl+D to exit.")
 
+    # keep track of if at least one message was sent
+    ret = False
+
     # interaction
     user_prompt = Style.BRIGHT + Fore.RED + "User: " + Style.RESET_ALL
     user_message = io.input_catch_eof(user_prompt)
     while user_message:
+        ret = True
         assistant_message = chat_handler.send_message(user_message)
 
         io.print_llm_message({"role": "assistant", "content": assistant_message})
 
         user_message = io.input_catch_eof(user_prompt)
+
+    return ret
 
 
 def chat_menu(chat_handler: ChatHandler):
@@ -42,10 +49,9 @@ def chat_menu(chat_handler: ChatHandler):
     """
 
     # get all chats
-    chats = chat_handler.get_chats_metadata()  # expensive, call once
+    chat_metadata = chat_handler.get_chats_metadata()  # expensive, call once
 
-    uuids = [ch["uuid"] for ch in chats]
-    names = [ch["name"] for ch in chats]
+    chats = {ch["uuid"]: ch["name"] for ch in chat_metadata}
 
     while True:
 
@@ -53,9 +59,9 @@ def chat_menu(chat_handler: ChatHandler):
 
         choice = io.select_one(
             "Select Chat:",
-            names + ["New Chat", "Back"],
-            uuids + [False, None],
-            selected_index=len(uuids),
+            list(reversed(chats.values())) + ["New Chat", "Back"],
+            list(reversed(chats.keys())) + [False, None],
+            selected_index=len(chats) + 1,
         )
 
         if choice is None:
@@ -65,7 +71,12 @@ def chat_menu(chat_handler: ChatHandler):
         elif choice:
             # must be uuid
             messages = chat_handler.select_chat(choice)
-            chat(chat_handler, messages)
+            if chat(chat_handler, messages):
+                # reorder
+                # pop
+                name = chats.pop(choice)
+                # move to front
+                chats[choice] = name
 
         else:
             # must be "New Chat"
@@ -75,8 +86,7 @@ def chat_menu(chat_handler: ChatHandler):
                 continue
 
             uuid = chat_handler.make_chat(name)
-            uuids.insert(0, uuid)
-            names.insert(0, name)
+            chats[uuid] = name  # pushes to end
 
             # already selected
             chat(chat_handler, [])
@@ -92,7 +102,7 @@ def main() -> int:
     # main menu
     while True:
         io.print_welcome_message()
-        choice = io.select_one("Choose an option: ", ["Chat", "Quit"], selected_index=0)
+        choice = io.select_one("Choose an option: ", ["Chat", "Quit"], selected_index=1)
 
         if choice == "Quit":
             return 0

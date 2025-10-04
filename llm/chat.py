@@ -128,7 +128,7 @@ class ChatHandler:
     def make_chat(self, name: str) -> str:
         """
         Make a new chat with this name and selects it
-        Updates state but does not create file until a message is sent
+        Updates state and creates file
         Returns unique chat id
         """
 
@@ -138,6 +138,15 @@ class ChatHandler:
 
         self._selected_chat = chat_id
         self._selected_messages = []
+
+        write_json(
+            self._messages_dir / f"{self._selected_chat}.json",
+            {
+                "name": name,
+                "time": self._chat_dictionary[chat_id]["time"].isoformat(),
+                "messages": self._selected_messages,
+            },
+        )
 
         return chat_id
 
