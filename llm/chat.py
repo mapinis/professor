@@ -12,7 +12,7 @@ from datetime import datetime
 
 import anthropic
 
-from professor.utils.files import read_json, write_json
+from utils.files import read_json, write_json
 
 
 class ChatHandler:
@@ -59,7 +59,7 @@ class ChatHandler:
         )
         self._selected_messages: list[anthropic.types.MessageParam] = []
 
-    def _load_chat_dictionary(self) -> dict[str, str]:
+    def _load_chat_dictionary(self) -> dict[str, dict]:
         """
         Loads the chat metadata into a uuid -> metadata dict
         """
@@ -105,10 +105,10 @@ class ChatHandler:
         """
 
         chats = []
-        for chat_id, metadata in self._chat_dictionary.values():
+        for chat_id, metadata in self._chat_dictionary.items():
             chats.append({**metadata, "uuid": chat_id})
 
-        return chats.sort(key=lambda ch: ch["time"])
+        return sorted(chats, key=lambda ch: ch["time"])
 
     def select_chat(self, chat_id: str) -> list[anthropic.types.MessageParam]:
         """
@@ -160,7 +160,7 @@ class ChatHandler:
         # generate response
         response = self._client.messages.create(
             max_tokens=512,
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5-20250929",
             messages=self._selected_messages,
             system=self._system_prompt,
         )
